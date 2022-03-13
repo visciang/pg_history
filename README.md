@@ -40,4 +40,7 @@ postgres=# select * from history.t_1;
   6 |     90 | DELETE   | {"id": 90, "field": "a"} |                           | 2022-03-13 21:37:43.60254+00
   7 |        | TRUNCATE |                          |                           | 2022-03-13 21:37:47.524263+00
 (5 rows)
+
+postgres=# call history.remove('public', 'tab');
+NOTICE:  dropped history.t_1 table
 ```
