@@ -1,6 +1,11 @@
 create schema history;
 
-create type history.op as enum ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE');
+create type history.op as enum (
+    'INSERT',
+    'UPDATE',
+    'DELETE',
+    'TRUNCATE'
+);
 
 create table history.tables (
     id bigint generated always as identity,
@@ -42,7 +47,7 @@ begin
     ', table_id, row_id_type);
 
     execute format('
-        create index on history.t_%s (row_id)
+        create index on history.t_%s (row_id, at)
     ', table_id);
 
     execute format('
@@ -112,4 +117,43 @@ begin
     end if;
 
     return null;
+end $$;
+
+
+create or replace function history.jsonb_diff(old jsonb, new jsonb) returns jsonb language plpgsql as $$
+declare
+    result jsonb;
+    object_result jsonb;
+    i int;
+    v record;
+begin
+    if old is null or jsonb_typeof(old) = 'null' then 
+        return new;
+    end if;
+
+    result = old;
+    for v in select * from jsonb_each(old) loop
+        result = result || jsonb_build_object(v.key, null);
+    end loop;
+
+    for v in select * from jsonb_each(new) loop
+        if jsonb_typeof(old->v.key) = 'object' and jsonb_typeof(new->v.key) = 'object' then
+            object_result = jsonb_diff_val(old->v.key, new->v.key);
+            -- check if result is not empty 
+            i = (select count(*) from jsonb_each(object_result));
+
+            if i = 0 then 
+                -- if empty remove
+                result = result - v.key;
+            else 
+                result = result || jsonb_build_object(v.key, object_result);
+            end if;
+        elsif old->v.key = new->v.key then 
+            result = result - v.key;
+        else
+            result = result || jsonb_build_object(v.key, v.value);
+        end if;
+    end loop;
+
+    return result;
 end $$;
