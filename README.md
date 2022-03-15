@@ -14,7 +14,7 @@ This table tracks every change in terms of:
 - `row_id`: the `id` of the changed row in the source table
 - `row`: jsonb representation of the record (post change)
 - `at`: when the change occurred
-- `id`: sequence number to sort the changes
+- `id`: sequence number sorting the changes
 
 ## Usage example
 
