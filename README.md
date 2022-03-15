@@ -10,10 +10,9 @@ call history.add('public', 'salary');
 
 The changes are stored in a distinct table under `history.t_`.
 This table tracks every change in terms of:
-- `row_id`: the `id` of the changed row in the source table/
 - `op`: the operation that changed the row (INSERT, UPDATE, ...)
-- `old`: jsonb representation of the old record (pre change)
-- `new`: jsonb representation of the new record (post change)
+- `row_id`: the `id` of the changed row in the source table
+- `row`: jsonb representation of the record (post change)
 - `at`: when the change occurred
 - `id`: sequence number to sort the changes
 
@@ -62,37 +61,37 @@ Query history:
 # full table history
 
 postgres=# select * from history.t_1 order by id;
- id |                row_id                |    op    |                                          old                                           |                                          new                                           |              at
-----+--------------------------------------+----------+----------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------+-------------------------------
-  1 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | INSERT   |                                                                                        | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 22, "employee": "John Black"} | 2022-03-14 11:36:00.840134+00
-  2 | 939a3b59-e10d-426f-95ce-4e6eed2c5f82 | INSERT   |                                                                                        | {"id": "939a3b59-e10d-426f-95ce-4e6eed2c5f82", "amount": 25, "employee": "Jane White"} | 2022-03-14 11:36:28.319889+00
-  3 | 939a3b59-e10d-426f-95ce-4e6eed2c5f82 | UPDATE   | {"id": "939a3b59-e10d-426f-95ce-4e6eed2c5f82", "amount": 25, "employee": "Jane White"} | {"id": "939a3b59-e10d-426f-95ce-4e6eed2c5f82", "amount": 30, "employee": "Jane White"} | 2022-03-14 11:36:57.814848+00
-  4 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | UPDATE   | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 22, "employee": "John Black"} | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 24, "employee": "John Black"} | 2022-03-14 11:36:57.835685+00
-  5 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | UPDATE   | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 24, "employee": "John Black"} | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 27, "employee": "John Black"} | 2022-03-14 11:36:59.22395+00
-  6 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | DELETE   | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 27, "employee": "John Black"} |                                                                                        | 2022-03-14 11:37:45.743582+00
-  7 |                                      | TRUNCATE |                                                                                        |                                                                                        | 2022-03-14 11:37:52.520035+00
+ id |    op    |                row_id                |                                          row                                           |              at               
+----+----------+--------------------------------------+----------------------------------------------------------------------------------------+-------------------------------
+  1 | INSERT   | 4f23d344-aad9-4012-8570-2c613e0aed2a | {"id": "4f23d344-aad9-4012-8570-2c613e0aed2a", "amount": 22, "employee": "John Black"} | 2022-03-15 19:32:39.357983+00
+  2 | INSERT   | 17517fbe-d33f-457a-bb82-4aa1212c7b08 | {"id": "17517fbe-d33f-457a-bb82-4aa1212c7b08", "amount": 25, "employee": "Jane White"} | 2022-03-15 19:32:57.018437+00
+  3 | UPDATE   | 17517fbe-d33f-457a-bb82-4aa1212c7b08 | {"id": "17517fbe-d33f-457a-bb82-4aa1212c7b08", "amount": 30, "employee": "Jane White"} | 2022-03-15 19:33:04.145736+00
+  4 | UPDATE   | 4f23d344-aad9-4012-8570-2c613e0aed2a | {"id": "4f23d344-aad9-4012-8570-2c613e0aed2a", "amount": 24, "employee": "John Black"} | 2022-03-15 19:33:20.323789+00
+  5 | UPDATE   | 4f23d344-aad9-4012-8570-2c613e0aed2a | {"id": "4f23d344-aad9-4012-8570-2c613e0aed2a", "amount": 27, "employee": "John Black"} | 2022-03-15 19:33:21.026718+00
+  6 | DELETE   | 4f23d344-aad9-4012-8570-2c613e0aed2a |                                                                                        | 2022-03-15 19:33:32.225305+00
+  7 | TRUNCATE |                                      |                                                                                        | 2022-03-15 19:33:43.187489+00
 (7 rows)
 
 # Salary history of 'John Black'
 
-postgres=# select * from history.t_1 where row_id = '93ae5bcb-23d1-4ed4-bb41-87199f7174e6' or row_id is null order by id;
- id |                row_id                |    op    |                                          old                                           |                                          new                                           |              at
-----+--------------------------------------+----------+----------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------+-------------------------------
-  1 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | INSERT   |                                                                                        | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 22, "employee": "John Black"} | 2022-03-14 11:36:00.840134+00
-  4 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | UPDATE   | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 22, "employee": "John Black"} | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 24, "employee": "John Black"} | 2022-03-14 11:36:57.835685+00
-  5 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | UPDATE   | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 24, "employee": "John Black"} | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 27, "employee": "John Black"} | 2022-03-14 11:36:59.22395+00
-  6 | 93ae5bcb-23d1-4ed4-bb41-87199f7174e6 | DELETE   | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 27, "employee": "John Black"} |                                                                                        | 2022-03-14 11:37:45.743582+00
-  7 |                                      | TRUNCATE |                                                                                        |                                                                                        | 2022-03-14 11:37:52.520035+00
+postgres=# select * from history.t_1 where row_id = '4f23d344-aad9-4012-8570-2c613e0aed2a' or row_id is null order by id;
+ id |    op    |                row_id                |                                          row                                           |              at               
+----+----------+--------------------------------------+----------------------------------------------------------------------------------------+-------------------------------
+  1 | INSERT   | 4f23d344-aad9-4012-8570-2c613e0aed2a | {"id": "4f23d344-aad9-4012-8570-2c613e0aed2a", "amount": 22, "employee": "John Black"} | 2022-03-15 19:32:39.357983+00
+  4 | UPDATE   | 4f23d344-aad9-4012-8570-2c613e0aed2a | {"id": "4f23d344-aad9-4012-8570-2c613e0aed2a", "amount": 24, "employee": "John Black"} | 2022-03-15 19:33:20.323789+00
+  5 | UPDATE   | 4f23d344-aad9-4012-8570-2c613e0aed2a | {"id": "4f23d344-aad9-4012-8570-2c613e0aed2a", "amount": 27, "employee": "John Black"} | 2022-03-15 19:33:21.026718+00
+  6 | DELETE   | 4f23d344-aad9-4012-8570-2c613e0aed2a |                                                                                        | 2022-03-15 19:33:32.225305+00
+  7 | TRUNCATE |                                      |                                                                                        | 2022-03-15 19:33:43.187489+00
 (5 rows)
 
-postgres=# select id, history.jsonb_diff(old, new) from history.t_1 where row_id = '93ae5bcb-23d1-4ed4-bb41-87199f7174e6' or row_id is null order by id;
- id |                                       jsonb_diff
-----+----------------------------------------------------------------------------------------
-  1 | {"id": "93ae5bcb-23d1-4ed4-bb41-87199f7174e6", "amount": 22, "employee": "John Black"}
-  4 | {"amount": 24}
-  5 | {"amount": 27}
-  6 | {"id": null, "amount": null, "employee": null}
-  7 |
+postgres=# select id, op, history.jsonb_diff(lag(row) over (order by id), row) diff from history.t_1 where row_id = '4f23d344-aad9-4012-8570-2c613e0aed2a' or row_id is null order by id;
+ id |    op    |                                          diff                                          
+----+----------+----------------------------------------------------------------------------------------
+  1 | INSERT   | {"id": "4f23d344-aad9-4012-8570-2c613e0aed2a", "amount": 22, "employee": "John Black"}
+  4 | UPDATE   | {"amount": 24}
+  5 | UPDATE   | {"amount": 27}
+  6 | DELETE   | {"id": null, "amount": null, "employee": null}
+  7 | TRUNCATE | 
 (5 rows)
 ```
 

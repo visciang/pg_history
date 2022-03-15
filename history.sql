@@ -36,10 +36,9 @@ begin
     execute format('
         create table history.t_%s (
             id bigint generated always as identity,
-            row_id %s,
             op history.op not null,
-            old jsonb,
-            new jsonb,
+            row_id %s,
+            row jsonb,
             at timestamp with time zone default now(),
 
             primary key (id)
@@ -98,21 +97,21 @@ begin
 
     if (TG_OP = 'TRUNCATE') then
         execute format('
-            insert into history.t_%s (row_id, op, old, new) values (%L, %L, %L, %L)
-        ', table_id, null, TG_OP, null, null);
+            insert into history.t_%s (op, row_id, row) values (%L, %L, %L)
+        ', table_id, TG_OP, null, null);
     elsif (TG_OP = 'INSERT') then
         execute format('
-            insert into history.t_%s (row_id, op, old, new) values (%L, %L, %L, %L)
-        ', table_id, NEW.id, TG_OP, null, to_jsonb(NEW));
+            insert into history.t_%s (op, row_id, row) values (%L, %L, %L)
+        ', table_id, TG_OP, NEW.id, to_jsonb(NEW));
     elsif (TG_OP = 'DELETE') then
         execute format('
-            insert into history.t_%s (row_id, op, old, new) values (%L, %L, %L, %L)
-        ', table_id, OLD.id, TG_OP, to_jsonb(OLD), null);
+            insert into history.t_%s (op, row_id, row) values (%L, %L, %L)
+        ', table_id, TG_OP, OLD.id, null);
     elsif (TG_OP = 'UPDATE') then
         if NEW is distinct from OLD then
             execute format('
-                insert into history.t_%s (row_id, op, old, new) values (%L, %L, %L, %L)
-            ', table_id, OLD.id, TG_OP, to_jsonb(OLD), to_jsonb(NEW));
+                insert into history.t_%s (op, row_id, row) values (%L, %L, %L)
+            ', table_id, TG_OP, NEW.id, to_jsonb(NEW));
         end if;
     end if;
 
